@@ -1,1 +1,252 @@
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Sky Routes</title><style>html,body{margin:0;overflow:hidden;background:#12343d;color:white;font:16px system-ui;touch-action:none}canvas{display:block;touch-action:none}#hud{position:fixed;top:12px;left:12px;font-weight:bold}#menu{position:fixed;inset:0;background:#102b35e8;display:grid;place-items:center;text-align:center}#panel{padding:28px;border-radius:20px;background:#20444c;max-width:300px}button{padding:16px 28px;background:#ffcf64;border:0;border-radius:12px;font-weight:bold;font-size:20px}</style></head><body><canvas id="c"></canvas><div id="hud">LANDED <span id="score">0</span> | BEST <span id="best">0</span></div><div id="menu"><div id="panel"><h1 id="heading">✈ Sky Routes</h1><p id="info">Draw routes from red jets, yellow planes and blue helicopters to their matching landing zones. Avoid collisions!</p><button id="start">START FLYING</button></div></div><script>(()=>{const c=document.getElementById('c'),g=c.getContext('2d'),menu=document.getElementById('menu'),heading=document.getElementById('heading'),info=document.getElementById('info'),scoreEl=document.getElementById('score'),bestEl=document.getElementById('best');let w,h,z=[],planes=[],selected=null,score=0,best=0,playing=false,last=0,spawnTime=0;try{best=+localStorage.getItem('sky-routes-best')||0}catch(e){}bestEl.textContent=best;const colors=['#ff6874','#ffce57','#65cfff'];function resize(){w=c.width=innerWidth;h=c.height=innerHeight;z=[{x:w*.2,y:h*.75,t:0},{x:w*.77,y:h*.77,t:1},{x:w*.77,y:h*.26,t:2}]}addEventListener('resize',resize);resize();const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);function spawn(){let t=Math.random()*3|0,e=Math.random()*4|0,x=e===0?-25:e===1?w+25:Math.random()*w,y=e===2?-25:e===3?h+25:Math.random()*h;planes.push({x,y,t,a:Math.atan2(h/2-y,w/2-x),speed:[76,60,47][t],path:[]})}function begin(){planes=[];score=0;scoreEl.textContent=0;spawnTime=0;playing=true;menu.style.display='none';spawn();last=performance.now()}document.getElementById('start').onclick=begin;function end(){playing=false;heading.textContent='Collision!';info.textContent='You landed '+score+' aircraft. Try again!';document.getElementById('start').textContent='PLAY AGAIN';menu.style.display='grid'}function pt(e){const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}c.addEventListener('pointerdown',e=>{if(!playing)return;const p=pt(e);selected=null;let d=42;for(const a of planes){let q=dist(a,p);if(q<d){selected=a;d=q}}if(selected){selected.path=[{x:selected.x,y:selected.y}];selected.routeIndex=0;c.setPointerCapture(e.pointerId)}});c.addEventListener('pointermove',e=>{if(!selected)return;const p=pt(e),path=selected.path;if(!path.length||dist(path[path.length-1],p)>5)path.push(p)});c.addEventListener('pointerup',e=>{if(selected){const q=pt(e),path=selected.path;if(dist(path[path.length-1],q)>2)path.push(q);selected.routeIndex=0}selected=null});c.addEventListener('pointercancel',()=>selected=null);function draw(){g.fillStyle='#183c46';g.fillRect(0,0,w,h);g.strokeStyle='#ffffff10';g.lineWidth=1;for(let x=0;x<w;x+=50){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}for(let y=0;y<h;y+=50){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}for(const p of z){g.save();g.translate(p.x,p.y);g.strokeStyle=colors[p.t];g.fillStyle=colors[p.t]+'55';g.lineWidth=3;if(p.t===2){g.beginPath();g.arc(0,0,29,0,Math.PI*2);g.fill();g.stroke();g.font='bold 29px system-ui';g.fillStyle=colors[2];g.textAlign='center';g.textBaseline='middle';g.fillText('H',0,0)}else{g.rotate(p.t===0?-.55:.55);g.fillRect(-39,-13,78,26);g.strokeRect(-39,-13,78,26)}g.restore()}for(const p of planes){if(p.path.length){g.beginPath();g.moveTo(p.x,p.y);for(const q of p.path.slice(p.routeIndex||0))g.lineTo(q.x,q.y);g.strokeStyle=colors[p.t];g.lineWidth=3;g.setLineDash([6,6]);g.stroke();g.setLineDash([])}g.save();g.translate(p.x,p.y);g.rotate(p.a+Math.PI/2);g.fillStyle=colors[p.t];g.beginPath();if(p.t===2){g.ellipse(0,0,8,13,0,0,Math.PI*2);g.fill();g.fillRect(-18,-2,36,4)}else{g.moveTo(0,-20);g.lineTo(6,0);g.lineTo(19,8);g.lineTo(19,12);g.lineTo(5,8);g.lineTo(5,18);g.lineTo(-5,18);g.lineTo(-5,8);g.lineTo(-19,12);g.lineTo(-19,8);g.lineTo(-6,0);g.closePath();g.fill()}g.restore()}}function frame(t){let dt=Math.min((t-last)/1000,.05);last=t;if(playing){spawnTime+=dt;if(spawnTime>Math.max(.9,3.4-score*.045)){spawn();spawnTime=0}for(const p of [...planes]){if(p.path.length>1){let path=p.path,idx=p.routeIndex||0;const step=p.speed*dt;let bestIdx=idx,bestDist=Infinity;for(let k=idx;k<path.length-1;k++){let a=path[k],b=path[k+1],dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy,u=len?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/len)):0;let px=a.x+dx*u,py=a.y+dy*u,d=Math.hypot(p.x-px,p.y-py);if(d<bestDist){bestDist=d;bestIdx=k}if(k>idx+12)break}idx=Math.max(idx,bestIdx);let look=Math.max(20,p.speed*.42),target=path[path.length-1];for(let k=idx;k<path.length-1;k++){let a=path[k],b=path[k+1],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);if(!len)continue;let u=k===idx?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(len*len))):0;let available=len*(1-u);if(look<=available){target={x:a.x+dx*(u+look/len),y:a.y+dy*(u+look/len)};break}look-=available}p.routeIndex=idx;let desired=Math.atan2(target.y-p.y,target.x-p.x),diff=Math.atan2(Math.sin(desired-p.a),Math.cos(desired-p.a));p.a+=Math.max(-dt*6,Math.min(dt*6,diff));if(dist(p,path[path.length-1])<Math.max(15,step*2)){p.path=[];p.routeIndex=0}}p.x+=Math.cos(p.a)*p.speed*dt;p.y+=Math.sin(p.a)*p.speed*dt;if(dist(p,z[p.t])<30){planes.splice(planes.indexOf(p),1);scoreEl.textContent=++score;if(score>best){best=score;bestEl.textContent=best;try{localStorage.setItem('sky-routes-best',best)}catch(e){}}}else if(p.x< -100||p.x>w+100||p.y< -100||p.y>h+100)planes.splice(planes.indexOf(p),1)}outer:for(let i=0;i<planes.length;i++)for(let j=i+1;j<planes.length;j++)if(dist(planes[i],planes[j])<24){end();break outer}}draw();requestAnimationFrame(frame)}requestAnimationFrame(frame)})();</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#183c46">
+<title>Sky Routes</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#183c46;color:white;font:16px system-ui;overscroll-behavior:none}canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}#hud{position:fixed;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;pointer-events:none;font-weight:800;text-shadow:0 2px 4px #123}button{padding:14px 24px;background:#ffcf64;color:#17313a;border:0;border-radius:12px;font:800 18px system-ui;touch-action:manipulation;cursor:pointer}#pause{pointer-events:auto;padding:9px 14px;font-size:14px}#menu{position:fixed;inset:0;background:#102b35e8;display:grid;place-items:center;text-align:center;padding:20px}#panel{padding:26px;border-radius:20px;background:#20444c;width:min(360px,100%);border:1px solid #ffffff35}h1{margin:0 0 14px}p{line-height:1.5;color:#d1e5e7}#start{width:100%}.small{font-size:12px}#version{position:fixed;bottom:max(6px,env(safe-area-inset-bottom));right:max(10px,env(safe-area-inset-right));font-size:11px;color:#b4ced1;pointer-events:none}#hint{position:fixed;bottom:max(26px,calc(env(safe-area-inset-bottom) + 20px));left:16px;right:16px;text-align:center;font-size:12px;color:#d1e5e7;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Sky Routes air traffic control game"></canvas>
+<div id="hud"><div>LANDED <span id="score">0</span> &nbsp;|&nbsp; BEST <span id="best">0</span></div><button id="pause" aria-label="Pause game">Pause</button></div>
+<div id="hint"></div><div id="version">v0.3 · precise routes</div>
+<div id="menu"><div id="panel"><h1 id="heading">✈ Sky Routes</h1><p id="info">Drag from an aircraft to draw its route. Match red and yellow planes to their runways, and blue helicopters to the helipad.</p><p class="small">The landing zone glows when your route is in range. Release to confirm. Avoid collisions!</p><button id="start">START FLYING</button></div></div>
+<script id="navigation">
+'use strict';
+// Append-only, rounded polylines. Motion and rendering use the SAME geometry.
+// Never search for a nearest segment: that skips loops and self-intersections.
+const Navigation = (() => {
+  const copy = p => ({x:p.x,y:p.y});
+  const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+  class Route {
+    constructor(start) {
+      this.points=[copy(start)]; this.next=1; this.raw=copy(start);
+      this.drawing=true; this.target=null; this.travelled=0; this.length=0;
+    }
+    push(p) {
+      const d=distance(this.points[this.points.length-1],p);
+      if(d>0.000001){this.points.push(copy(p));this.length+=d;}
+    }
+    append(p) {
+      if(!this.drawing || !Number.isFinite(p.x) || !Number.isFinite(p.y))return;
+      const from=copy(this.raw), count=Math.ceil(distance(from,p)/6);
+      // Resample sparse touch events before rounding. Corners stay within ~2px
+      // of the gesture rather than being cut by a long look-ahead distance.
+      for(let i=1;i<=count;i++) {
+        const q={x:from.x+(p.x-from.x)*i/count,y:from.y+(p.y-from.y)*i/count};
+        const a=this.points[this.points.length-1], b=this.raw;
+        const end={x:(b.x+q.x)/2,y:(b.y+q.y)/2};
+        const steps=Math.max(1,Math.ceil((distance(a,b)+distance(b,end))/2));
+        for(let j=1;j<=steps;j++) {
+          const t=j/steps,u=1-t;
+          this.push({x:u*u*a.x+2*u*t*b.x+t*t*end.x,y:u*u*a.y+2*u*t*b.y+t*t*end.y});
+        }
+        this.raw=q;
+      }
+    }
+    finish(zone=null) {
+      if(!this.drawing)return;
+      if(zone){this.append(zone);this.target=zone.t;}
+      this.push(this.raw); this.drawing=false;
+      // Do NOT reset next: the aircraft may have flown part of this route
+      // while the player was drawing it.
+    }
+    advance(plane,budget) {
+      let left=Math.max(0,budget);
+      while(this.next<this.points.length) {
+        const q=this.points[this.next], d=distance(plane,q);
+        if(d<0.000001){plane.x=q.x;plane.y=q.y;this.next++;continue;}
+        if(left<=0)break;
+        plane.a=Math.atan2(q.y-plane.y,q.x-plane.x);
+        const move=Math.min(d,left);
+        plane.x+=(q.x-plane.x)*move/d;plane.y+=(q.y-plane.y)*move/d;
+        this.travelled+=move;left=Math.max(0,left-move);
+        if(move>=d){plane.x=q.x;plane.y=q.y;this.next++;}
+      }
+      // At an unfinished stroke's tip, wait for more input. Never discard it.
+      return {done:!this.drawing && this.next>=this.points.length,left};
+    }
+    scale(sx,sy,plane) {
+      for(const p of this.points){p.x*=sx;p.y*=sy;}
+      this.raw.x*=sx;this.raw.y*=sy;
+      this.length=0;this.travelled=0;
+      for(let i=1;i<this.points.length;i++) {
+        const d=distance(this.points[i-1],this.points[i]);this.length+=d;
+        if(i<this.next)this.travelled+=d;
+      }
+      if(this.next<this.points.length)this.travelled+=distance(this.points[this.next-1],plane);
+    }
+  }
+  function zoneHit(p,z) {
+    if(z.t===2)return distance(p,z)<=44;
+    const dx=p.x-z.x,dy=p.y-z.y,cs=Math.cos(z.a),sn=Math.sin(z.a);
+    const along=dx*cs+dy*sn,cross=-dx*sn+dy*cs;
+    return Math.hypot(Math.max(0,Math.abs(along)-39),cross)<=30;
+  }
+  return {Route,distance,zoneHit};
+})();
+</script>
+<script id="game">
+(()=>{
+'use strict';
+const c=document.getElementById('c'),g=c.getContext('2d');
+const menu=document.getElementById('menu'),heading=document.getElementById('heading'),info=document.getElementById('info');
+const scoreEl=document.getElementById('score'),bestEl=document.getElementById('best'),start=document.getElementById('start'),pauseButton=document.getElementById('pause'),hint=document.getElementById('hint');
+const colors=['#ff6874','#ffce57','#65cfff'],dist=Navigation.distance;
+let w=0,h=0,z=[],planes=[],drag=null,score=0,best=0,state='menu',last=0,spawnTime=0,elapsed=0;
+try{best=Number(localStorage.getItem('sky-routes-best'))||0;}catch(e){}
+bestEl.textContent=best;
+function resize(){
+  const oldW=w,oldH=h;w=innerWidth;h=innerHeight;
+  const dpr=Math.min(devicePixelRatio||1,2);c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  g.setTransform(dpr,0,0,dpr,0,0);
+  z=[{x:w*.2,y:h*.75,t:0,a:-.55},{x:w*.77,y:h*.77,t:1,a:.55},{x:w*.77,y:h*.26,t:2,a:0}];
+  if(oldW&&oldH){
+    const sx=w/oldW,sy=h/oldH;
+    for(const p of planes){p.x*=sx;p.y*=sy;if(p.route)p.route.scale(sx,sy,p);}
+    if(drag){drag.down.x*=sx;drag.down.y*=sy;}
+  }
+}
+addEventListener('resize',resize);resize();
+function spawn(){
+  for(let attempt=0;attempt<12;attempt++){
+    const t=Math.random()*3|0,e=Math.random()*4|0;
+    const x=e===0?-25:e===1?w+25:25+Math.random()*Math.max(1,w-50);
+    const y=e===2?-25:e===3?h+25:65+Math.random()*Math.max(1,h-100);
+    if(planes.some(p=>!p.landing&&dist(p,{x,y})<90))continue;
+    const a=Math.atan2(h/2-y,w/2-x);
+    planes.push({x,y,t,a,visualA:a,speed:[76,60,47][t],route:null,landing:0,warning:false});return;
+  }
+}
+function begin(){
+  finishDrag(null,true);planes=[];score=0;elapsed=0;spawnTime=0;scoreEl.textContent=0;
+  state='play';menu.style.display='none';pauseButton.textContent='Pause';spawn();last=performance.now();
+}
+function togglePause(){
+  if(state==='play'){
+    finishDrag(null,true);state='paused';heading.textContent='Paused';info.textContent='Your routes are saved. Ready to continue?';start.textContent='RESUME';menu.style.display='grid';pauseButton.textContent='Resume';
+  }else if(state==='paused'){state='play';menu.style.display='none';pauseButton.textContent='Pause';last=performance.now();}
+}
+function end(){
+  finishDrag(null,true);state='over';heading.textContent='Collision!';info.textContent='You landed '+score+' aircraft. Best: '+best+'.';start.textContent='PLAY AGAIN';menu.style.display='grid';
+}
+start.onclick=()=>state==='paused'?togglePause():begin();pauseButton.onclick=togglePause;
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')togglePause();});
+function point(e){const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*w/r.width,y:(e.clientY-r.top)*h/r.height};}
+function moveDrag(e){
+  if(!drag||e.pointerId!==drag.id||state!=='play')return;
+  const q=point(e);
+  if(!drag.active){
+    if(dist(q,drag.down)<6)return;
+    drag.active=true;drag.plane.route=new Navigation.Route(drag.plane);
+  }
+  drag.plane.route.append(q);
+}
+c.addEventListener('pointerdown',e=>{
+  if(state!=='play'||drag||e.isPrimary===false||e.button!==0)return;
+  const q=point(e);let selected=null,d=44;
+  for(const p of planes){if(p.landing)continue;const v=dist(q,p);if(v<d){selected=p;d=v;}}
+  if(!selected)return;
+  e.preventDefault();drag={plane:selected,id:e.pointerId,down:q,active:false};
+  try{c.setPointerCapture(e.pointerId);}catch(err){}
+});
+c.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.id)return;e.preventDefault();
+  const events=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[];
+  if(events.length){for(const q of events)moveDrag(q);}else moveDrag(e);
+});
+function finishDrag(e,cancelled=false){
+  if(!drag||(e&&e.pointerId!==drag.id))return;
+  if(e&&!cancelled)moveDrag(e);
+  const d=drag;drag=null;
+  if(d.active&&d.plane.route){
+    const route=d.plane.route,zone=z[d.plane.t];
+    route.finish(!cancelled&&Navigation.zoneHit(route.raw,zone)?zone:null);
+  }
+  try{if(c.hasPointerCapture(d.id))c.releasePointerCapture(d.id);}catch(err){}
+}
+c.addEventListener('pointerup',e=>finishDrag(e));
+c.addEventListener('pointercancel',e=>finishDrag(e,true));
+c.addEventListener('lostpointercapture',e=>finishDrag(e,true));
+function addScore(){
+  scoreEl.textContent=++score;
+  if(score>best){bestEl.textContent=best=score;try{localStorage.setItem('sky-routes-best',best);}catch(e){}}
+}
+function separation(a,b){
+  const x=a.oldX-b.oldX,y=a.oldY-b.oldY,dx=(a.x-a.oldX)-(b.x-b.oldX),dy=(a.y-a.oldY)-(b.y-b.oldY);
+  const den=dx*dx+dy*dy,t=den?Math.max(0,Math.min(1,-(x*dx+y*dy)/den)):0;
+  return Math.hypot(x+dx*t,y+dy*t);
+}
+function update(dt){
+  elapsed+=dt;spawnTime+=dt;
+  if(spawnTime>Math.max(.9,3.4-score*.045)){spawn();spawnTime=0;}
+  const airborne=[];
+  for(const p of planes){
+    p.warning=false;
+    if(p.landing){p.landing+=dt;if(p.landing>=.45){p.remove=true;addScore();}continue;}
+    p.oldX=p.x;p.oldY=p.y;airborne.push(p);
+    if(p.route){
+      const route=p.route,result=route.advance(p,p.speed*dt);
+      if(result.done){
+        p.route=null;
+        if(route.target!==null)p.readyToLand=true;
+        else{p.x+=Math.cos(p.a)*result.left;p.y+=Math.sin(p.a)*result.left;}
+      }
+    }else{p.x+=Math.cos(p.a)*p.speed*dt;p.y+=Math.sin(p.a)*p.speed*dt;}
+    const diff=Math.atan2(Math.sin(p.a-p.visualA),Math.cos(p.a-p.visualA));p.visualA+=diff*(1-Math.exp(-16*dt));
+    if(p.x< -100||p.x>w+100||p.y< -100||p.y>h+100)p.remove=true;
+  }
+  for(let i=0;i<airborne.length;i++)for(let j=i+1;j<airborne.length;j++){
+    const a=airborne[i],b=airborne[j],d=separation(a,b);
+    if(d<24){end();return;}
+    if(d<75)a.warning=b.warning=true;
+  }
+  for(const p of airborne)if(p.readyToLand){p.readyToLand=false;p.landing=.0001;}
+  planes=planes.filter(p=>!p.remove);
+  if(drag&&!planes.includes(drag.plane))finishDrag(null,true);
+}
+function draw(){
+  g.fillStyle='#183c46';g.fillRect(0,0,w,h);g.strokeStyle='#ffffff10';g.lineWidth=1;
+  g.beginPath();for(let x=0;x<w;x+=50){g.moveTo(x,0);g.lineTo(x,h);}for(let y=0;y<h;y+=50){g.moveTo(0,y);g.lineTo(w,y);}g.stroke();
+  const active=drag&&drag.active?drag.plane:null;
+  const hovered=active&&Navigation.zoneHit(active.route.raw,z[active.t])?active.t:null;
+  for(const zone of z){
+    const ready=hovered===zone.t||planes.some(p=>p.route&&p.route.target===zone.t);
+    g.save();g.translate(zone.x,zone.y);g.strokeStyle=colors[zone.t];g.fillStyle=colors[zone.t]+(ready?'99':'40');g.lineWidth=ready?4:3;
+    if(ready){g.shadowColor=colors[zone.t];g.shadowBlur=18;}
+    if(zone.t===2){g.beginPath();g.arc(0,0,29,0,Math.PI*2);g.fill();g.stroke();g.font='bold 29px system-ui';g.fillStyle=colors[2];g.textAlign='center';g.textBaseline='middle';g.fillText('H',0,0);}
+    else{g.rotate(zone.a);g.fillRect(-39,-13,78,26);g.strokeRect(-39,-13,78,26);g.beginPath();g.setLineDash([7,5]);g.moveTo(-32,0);g.lineTo(32,0);g.stroke();}
+    g.restore();
+  }
+  for(const p of planes){
+    const r=p.route;
+    if(r){
+      g.beginPath();g.moveTo(p.x,p.y);for(let i=r.next;i<r.points.length;i++)g.lineTo(r.points[i].x,r.points[i].y);
+      g.strokeStyle=colors[p.t];g.lineWidth=3;g.lineCap='round';g.lineJoin='round';g.setLineDash(r.target!==null?[]:[6,6]);g.stroke();g.setLineDash([]);
+      const tip=r.points[r.points.length-1];g.beginPath();g.arc(tip.x,tip.y,4,0,Math.PI*2);g.fillStyle=colors[p.t];g.fill();
+      if(active===p&&hovered!==null){g.beginPath();g.moveTo(tip.x,tip.y);g.lineTo(z[p.t].x,z[p.t].y);g.setLineDash([3,4]);g.stroke();g.setLineDash([]);}
+    }
+    g.save();g.translate(p.x,p.y);g.rotate(p.visualA+Math.PI/2);
+    if(p.landing){const size=Math.max(0,1-p.landing/.45);g.scale(size,size);g.globalAlpha=size;}
+    g.fillStyle=colors[p.t];g.beginPath();
+    if(p.t===2){g.ellipse(0,0,8,13,0,0,Math.PI*2);g.fill();g.fillRect(-18,-2,36,4);g.fillRect(-2,8,4,15);}
+    else{g.moveTo(0,-20);g.lineTo(6,0);g.lineTo(19,8);g.lineTo(19,12);g.lineTo(5,8);g.lineTo(5,18);g.lineTo(-5,18);g.lineTo(-5,8);g.lineTo(-19,12);g.lineTo(-19,8);g.lineTo(-6,0);g.closePath();g.fill();}
+    g.restore();
+    if(p.warning||(drag&&drag.plane===p)){g.beginPath();g.arc(p.x,p.y,27,0,Math.PI*2);g.strokeStyle=p.warning?'#ff8c91':'#ffffffaa';g.lineWidth=2;g.stroke();}
+  }
+  hint.textContent=state==='play'?(hovered!==null?'RELEASE TO CONFIRM LANDING':elapsed<9?'Drag from an aircraft. Match its colour. Avoid collisions.':''):'';
+}
+function frame(t){
+  let dt=Math.max(0,Math.min((t-last)/1000,.05));last=t;
+  while(state==='play'&&dt>0){const step=Math.min(dt,1/120);update(step);dt-=step;}
+  draw();requestAnimationFrame(frame);
+}
+/* TEST_HOOK */
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
