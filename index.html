@@ -3,17 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#183c46">
-<title>Sky Routes</title>
+<meta name="theme-color" content="#174c68">
+<meta name="description" content="Sky Routes: draw flight paths, guide your fleet and keep the skies over Coral Cove clear.">
+<title>Sky Routes · Coral Cove</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#183c46;color:white;font:16px system-ui;overscroll-behavior:none}canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}#hud{position:fixed;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;pointer-events:none;font-weight:800;text-shadow:0 2px 4px #123}button{padding:14px 24px;background:#ffcf64;color:#17313a;border:0;border-radius:12px;font:800 18px system-ui;touch-action:manipulation;cursor:pointer}#pause{pointer-events:auto;padding:9px 14px;font-size:14px}#menu{position:fixed;inset:0;background:#102b35e8;display:grid;place-items:center;text-align:center;padding:20px}#panel{padding:26px;border-radius:20px;background:#20444c;width:min(360px,100%);border:1px solid #ffffff35}h1{margin:0 0 14px}p{line-height:1.5;color:#d1e5e7}#start{width:100%}.small{font-size:12px}#version{position:fixed;bottom:max(6px,env(safe-area-inset-bottom));right:max(10px,env(safe-area-inset-right));font-size:11px;color:#b4ced1;pointer-events:none}#hint{position:fixed;bottom:max(26px,calc(env(safe-area-inset-bottom) + 20px));left:16px;right:16px;text-align:center;font-size:12px;color:#d1e5e7;pointer-events:none}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#174c68;color:#eef6e9;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;overscroll-behavior:none}canvas#c{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}button{border:0;font:800 15px inherit;cursor:pointer;touch-action:manipulation}button:focus-visible{outline:3px solid #ffb74d;outline-offset:4px}#hud{position:fixed;top:max(12px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));display:flex;align-items:center;gap:10px;pointer-events:none}#brand{font-size:16px;line-height:.9;font-weight:900;letter-spacing:-.6px;text-shadow:0 2px 8px #1237}#brand span{color:#a7dbd8}#stats{display:flex;gap:22px;align-items:center;margin-left:auto;padding:9px 18px;background:#143e53e6;border:1px solid #d7ede326;border-radius:14px;box-shadow:0 6px 20px #1232}.stat{display:flex;flex-direction:column;align-items:center;gap:1px}.stat label{font-size:8px;font-weight:800;letter-spacing:1.7px;color:#a8cfcc}.stat span{font-variant-numeric:tabular-nums;font-size:22px;line-height:1.1;font-weight:850}.stat:last-child span{color:#ffd166}#pause{pointer-events:auto;min-width:56px;min-height:44px;padding:10px;border:1px solid #d7ede326;border-radius:13px;background:#143e53e6;color:#e3f3e9;font:750 11px system-ui;box-shadow:0 6px 20px #1232}#menu{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#102e4569;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}#panel{position:relative;width:min(390px,100%);max-height:100%;overflow:auto;padding:30px 27px 24px;border-radius:28px;background:#faf6e8f7;color:#203d50;text-align:center;border:1px solid #fffdf4;box-shadow:0 22px 70px #0c2d4d66}.eyebrow{font-size:9px;letter-spacing:2px;font-weight:850;color:#4f847f;display:flex;justify-content:center;align-items:center;gap:8px}.live-dot{width:6px;height:6px;background:#53a58a;display:inline-block;border-radius:50%;box-shadow:0 0 0 4px #53a58a18}h1{font-size:54px;font-weight:950;letter-spacing:-2.5px;line-height:.94;margin:24px 0 18px;text-transform:uppercase}h1 span{color:#3d8f91}p{font-size:13px;line-height:1.65;color:#59706f;margin:0}#fleet{display:flex;gap:9px;justify-content:center;margin:24px 0 18px}.craft-card{flex:1;min-width:0;border:1px solid #d1dbcb;border-radius:14px;background:#f2f0df;padding:4px 2px 9px}.craft-card canvas{display:block;width:68px;height:62px;max-width:100%;margin:0 auto}.craft-card b{display:block;font-size:9px;letter-spacing:1.1px;color:#385460}.craft-card small{font-size:9px;color:#82928a}.small{font-size:11px;line-height:1.5;margin:0 7px 18px}#start{width:100%;padding:17px 15px;border-radius:13px;background:#f9c968;color:#273f4c;font:900 13px system-ui;letter-spacing:1.4px;box-shadow:0 4px 0 #dba752;transition:transform .12s,box-shadow .12s}#start:active{transform:translateY(3px);box-shadow:0 1px 0 #dba752}.panel-footer{font-size:8px;font-weight:800;letter-spacing:1.6px;color:#8b9d92;margin-top:18px}#version{position:fixed;bottom:max(8px,env(safe-area-inset-bottom));right:max(12px,env(safe-area-inset-right));font-size:10px;letter-spacing:.3px;color:#d1e9e4b0;pointer-events:none;text-shadow:0 1px 4px #163b55}#hint{position:fixed;bottom:max(33px,calc(env(safe-area-inset-bottom) + 23px));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);padding:9px 14px;border-radius:20px;background:#133e53e6;border:1px solid #d8eee02e;text-align:center;font-size:10px;line-height:1.5;font-weight:600;color:#e1f1df;pointer-events:none}#hint:empty{display:none}@media(max-width:360px){#stats{gap:15px;padding:9px 13px}#panel{padding:24px 20px}h1{font-size:48px}}@media(max-height:520px) and (min-width:540px){#panel{width:min(670px,100%);display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;padding:22px 28px;border-radius:24px}.eyebrow{grid-column:1;grid-row:1}h1{grid-column:1;grid-row:2;font-size:44px;margin:3px 0}#info{grid-column:1;grid-row:3;font-size:11px}#fleet{grid-column:2;grid-row:1/4;align-self:center;margin:0}.small{grid-column:2;grid-row:4;margin:0;align-self:center;font-size:10px}#start{grid-column:1;grid-row:4;padding:13px}.panel-footer{grid-column:1/3;margin:0;font-size:8px}}
 </style>
 </head>
 <body>
 <canvas id="c" aria-label="Sky Routes air traffic control game"></canvas>
-<div id="hud"><div>LANDED <span id="score">0</span> &nbsp;|&nbsp; BEST <span id="best">0</span></div><button id="pause" aria-label="Pause game">Pause</button></div>
-<div id="hint"></div><div id="version">v0.3 · precise routes</div>
-<div id="menu"><div id="panel"><h1 id="heading">✈ Sky Routes</h1><p id="info">Drag from an aircraft to draw its route. Match red and yellow planes to their runways, and blue helicopters to the helipad.</p><p class="small">The landing zone glows when your route is in range. Release to confirm. Avoid collisions!</p><button id="start">START FLYING</button></div></div>
+<div id="hud"><div id="brand">SKY<br><span>ROUTES</span></div><div id="stats"><div class="stat"><label>LANDED</label><span id="score">0</span></div><div class="stat"><label>RECORD</label><span id="best">0</span></div></div><button id="pause" aria-label="Pause or resume game">Pause</button></div>
+<div id="hint"></div><div id="version">v0.4 · Coral Cove</div>
+<div id="menu"><div id="panel"><div class="eyebrow"><span class="live-dot"></span>CORAL COVE · TOWER 01</div><h1 id="heading">Sky<br><span>Routes</span></h1><p id="info">A little island. A busy sky.<br>Draw a route from each aircraft to its matching landing zone. Keep your fleet safely apart.</p><div id="fleet"><div class="craft-card"><canvas id="preview-0" width="136" height="124" aria-label="Red jet"></canvas><b>JET</b><small>Red runway</small></div><div class="craft-card"><canvas id="preview-1" width="136" height="124" aria-label="Yellow propeller plane"></canvas><b>PROP</b><small>Gold runway</small></div><div class="craft-card"><canvas id="preview-2" width="136" height="124" aria-label="Blue helicopter"></canvas><b>HELI</b><small>Blue helipad</small></div></div><p class="small">The landing zone lights up when your route connects. Release to confirm.</p><button id="start">START FLYING</button><div class="panel-footer">DRAW A LINE. BRING THEM HOME.</div></div></div>
+<script src="art-v04.js"></script>
 <script id="navigation">
 'use strict';
 // Append-only, rounded polylines. Motion and rendering use the SAME geometry.
@@ -209,34 +211,9 @@ function update(dt){
   if(drag&&!planes.includes(drag.plane))finishDrag(null,true);
 }
 function draw(){
-  g.fillStyle='#183c46';g.fillRect(0,0,w,h);g.strokeStyle='#ffffff10';g.lineWidth=1;
-  g.beginPath();for(let x=0;x<w;x+=50){g.moveTo(x,0);g.lineTo(x,h);}for(let y=0;y<h;y+=50){g.moveTo(0,y);g.lineTo(w,y);}g.stroke();
   const active=drag&&drag.active?drag.plane:null;
   const hovered=active&&Navigation.zoneHit(active.route.raw,z[active.t])?active.t:null;
-  for(const zone of z){
-    const ready=hovered===zone.t||planes.some(p=>p.route&&p.route.target===zone.t);
-    g.save();g.translate(zone.x,zone.y);g.strokeStyle=colors[zone.t];g.fillStyle=colors[zone.t]+(ready?'99':'40');g.lineWidth=ready?4:3;
-    if(ready){g.shadowColor=colors[zone.t];g.shadowBlur=18;}
-    if(zone.t===2){g.beginPath();g.arc(0,0,29,0,Math.PI*2);g.fill();g.stroke();g.font='bold 29px system-ui';g.fillStyle=colors[2];g.textAlign='center';g.textBaseline='middle';g.fillText('H',0,0);}
-    else{g.rotate(zone.a);g.fillRect(-39,-13,78,26);g.strokeRect(-39,-13,78,26);g.beginPath();g.setLineDash([7,5]);g.moveTo(-32,0);g.lineTo(32,0);g.stroke();}
-    g.restore();
-  }
-  for(const p of planes){
-    const r=p.route;
-    if(r){
-      g.beginPath();g.moveTo(p.x,p.y);for(let i=r.next;i<r.points.length;i++)g.lineTo(r.points[i].x,r.points[i].y);
-      g.strokeStyle=colors[p.t];g.lineWidth=3;g.lineCap='round';g.lineJoin='round';g.setLineDash(r.target!==null?[]:[6,6]);g.stroke();g.setLineDash([]);
-      const tip=r.points[r.points.length-1];g.beginPath();g.arc(tip.x,tip.y,4,0,Math.PI*2);g.fillStyle=colors[p.t];g.fill();
-      if(active===p&&hovered!==null){g.beginPath();g.moveTo(tip.x,tip.y);g.lineTo(z[p.t].x,z[p.t].y);g.setLineDash([3,4]);g.stroke();g.setLineDash([]);}
-    }
-    g.save();g.translate(p.x,p.y);g.rotate(p.visualA+Math.PI/2);
-    if(p.landing){const size=Math.max(0,1-p.landing/.45);g.scale(size,size);g.globalAlpha=size;}
-    g.fillStyle=colors[p.t];g.beginPath();
-    if(p.t===2){g.ellipse(0,0,8,13,0,0,Math.PI*2);g.fill();g.fillRect(-18,-2,36,4);g.fillRect(-2,8,4,15);}
-    else{g.moveTo(0,-20);g.lineTo(6,0);g.lineTo(19,8);g.lineTo(19,12);g.lineTo(5,8);g.lineTo(5,18);g.lineTo(-5,18);g.lineTo(-5,8);g.lineTo(-19,12);g.lineTo(-19,8);g.lineTo(-6,0);g.closePath();g.fill();}
-    g.restore();
-    if(p.warning||(drag&&drag.plane===p)){g.beginPath();g.arc(p.x,p.y,27,0,Math.PI*2);g.strokeStyle=p.warning?'#ff8c91':'#ffffffaa';g.lineWidth=2;g.stroke();}
-  }
+  SkyArt.render(g,w,h,z,planes,drag,hovered,state);
   hint.textContent=state==='play'?(hovered!==null?'RELEASE TO CONFIRM LANDING':elapsed<9?'Drag from an aircraft. Match its colour. Avoid collisions.':''):'';
 }
 function frame(t){
@@ -245,6 +222,7 @@ function frame(t){
   draw();requestAnimationFrame(frame);
 }
 /* TEST_HOOK */
+SkyArt.previews();
 requestAnimationFrame(frame);
 })();
 </script>
